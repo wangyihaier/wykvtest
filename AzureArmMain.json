@@ -15,17 +15,6 @@
                 "description": "The administrator password of the SQL Server."
             }
         },
-        "transparentDataEncryption": {
-            "type": "string",
-            "allowedValues": [
-                "Enabled",
-                "Disabled"
-            ],
-            "defaultValue": "Enabled",
-            "metadata": {
-                "description": "Enable or disable Transparent Data Encryption (TDE) for the database."
-            }
-        },
         "location": {
             "type": "string",
             "defaultValue": "[resourceGroup().location]",
@@ -37,10 +26,7 @@
     "variables": {
         "sqlServerName": "[concat('sqlserver', uniqueString(subscription().id, resourceGroup().id))]",
         "databaseName": "sample-db-with-tde",
-        "databaseEdition": "Basic",
-        "databaseCollation": "SQL_Latin1_General_CP1_CI_AS",
-        "databaseServiceObjectiveName": "Basic",
-        "sqlAdministratorLoginPasswordSN": "SQLAdministratorLoginPasswordSN"
+        "sqlAdministratorLoginPasswordSN": "sqlAdministratorLoginPasswordSN"
     },
     "resources": [
         {
@@ -50,7 +36,7 @@
             "properties": {
                 "mode": "incremental",
                 "templateLink": {
-                    "uri": "https://raw.githubusercontent.com/wangyihaier/AzureMDWScripts/kvdev/BeforeLab/AzureKeyVaultDeployment.json",
+                    "uri": "https://raw.githubusercontent.com/wangyihaier/wykvtest/master/AzureKeyVault.json",
                     "contentVersion": "1.0.0.0"
                 },
                 "parameters": {
@@ -68,84 +54,40 @@
             }
         },
         {
-            "name": "[variables('sqlServerName')]",
-            "type": "Microsoft.Sql/servers",
-            "apiVersion": "2014-04-01",
-            "location": "[parameters('location')]",
+            "apiVersion": "2018-05-01",
+            "name": "linkedTemplate-sqlserver",
+            "type": "Microsoft.Resources/deployments",
             "dependsOn": [
                 "linkedTemplate-keyvault"
             ],
-            "tags": {
-                "displayName": "SqlServer"
-            },
             "properties": {
-                "administratorLogin": "[parameters('sqlAdministratorLogin')]",
-                "administratorLoginPassword": {
-                    "reference": {
-                        "keyVault": {
-                            "id": "[reference('linkedTemplate-keyvault','2018-05-01','Full').outputs.rkkeyvault.value]"
-                        },
-                        "secretName": "[variables('sqlAdministratorLoginPasswordSN')]"
-                    }
+                "mode": "incremental",
+                "templateLink": {
+                    "uri": "https://raw.githubusercontent.com/wangyihaier/wykvtest/master/AzureSQLServer.json",
+                    "contentVersion": "1.0.0.0"
                 },
-                "version": "12.0"
-            },
-            "resources": [
-                {
-                    "name": "[variables('databaseName')]",
-                    "type": "databases",
-                    "apiVersion": "2015-01-01",
-                    "location": "[parameters('location')]",
-                    "tags": {
-                        "displayName": "Database"
+                "parameters": {
+                    "sqlserver-name": {
+                        "value": "[variables('sqlServerName')]"
                     },
-                    "properties": {
-                        "edition": "[variables('databaseEdition')]",
-                        "collation": "[variables('databaseCollation')]",
-                        "requestedServiceObjectiveName": "[variables('databaseServiceObjectiveName')]"
+                    "sqldatabase-name": {
+                        "value": "[variables('databaseName')]"
                     },
-                    "dependsOn": [
-                        "[variables('sqlServerName')]"
-                    ],
-                    "resources": [
-                        {
-                            "comments": "Transparent Data Encryption",
-                            "name": "current",
-                            "type": "transparentDataEncryption",
-                            "apiVersion": "2014-04-01-preview",
-                            "properties": {
-                                "status": "[parameters('transparentDataEncryption')]"
+                    "sqlAdministratorLoginPassword": {
+                        "reference": {
+                            "keyVault": {
+                                "id": "[reference('linkedTemplate-keyvault').outputs.rkkeyvault.value]"
                             },
-                            "dependsOn": [
-                                "[variables('databaseName')]"
-                            ]
+                            "secretName": "[variables('sqlAdministratorLoginPasswordSN')]"
                         }
-                    ]
-                },
-                {
-                    "name": "AllowAllMicrosoftAzureIps",
-                    "type": "firewallrules",
-                    "apiVersion": "2014-04-01",
-                    "location": "[parameters('location')]",
-                    "properties": {
-                        "endIpAddress": "0.0.0.0",
-                        "startIpAddress": "0.0.0.0"
                     },
-                    "dependsOn": [
-                        "[variables('sqlServerName')]"
-                    ]
+                    "location": {
+                        "value": "[parameters('location')]"
+                    }
                 }
-            ]
+            }
         }
     ],
     "outputs": {
-        "sqlServerFqdn": {
-            "type": "string",
-            "value": "[reference(concat('Microsoft.Sql/servers/', variables('sqlServerName'))).fullyQualifiedDomainName]"
-        },
-        "databaseName": {
-            "type": "string",
-            "value": "[variables('databaseName')]"
-        }
     }
 }
