@@ -18,7 +18,7 @@
         },
         "sqlAdministratorLogin": {
             "type": "string",
-            "defaultValue":"wyadmin",
+            "defaultValue": "wyadmin",
             "metadata": {
                 "description": "The admin user of the SQL Server"
             }
@@ -31,28 +31,7 @@
         },
         "location": {
             "type": "string",
-            "defaultValue": "Southeast Asia",
-            "allowedValues": [
-                "East Asia",
-                "Southeast Asia",
-                "Australia Southeast",
-                "Japan East",
-                "Japan West",
-                "Korea Central",
-                "North Central US",
-                "South Central US",
-                "East US",
-                "East US 2",
-                "West US",
-                "West US 2",
-                "Central US",
-                "West Central US",
-                "North Europe",
-                "West Europe",
-                "Brazil South",
-                "UK West",
-                "UK South"
-            ],
+            "defaultValue": "[resourceGroup().location]",
             "metadata": {
                 "description": "Location for all resources."
             }
